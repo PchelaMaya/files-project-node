@@ -1,0 +1,60 @@
+const express = require("express");
+
+const hbs = require("hbs");
+
+const folder = require("./folder");
+
+const app = express();
+
+const multer = require("multer");
+
+const upload = multer({dest: "files"});
+
+const storageConfig = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, "files");
+    },
+    filename: (req, file, cb) => {
+        cb(null, Date.now() + "-" + file.originalname);
+    }
+});
+
+app.set("view engine", "hbs");
+
+app.use(express.static(__dirname));
+
+app.use(multer({storage: storageConfig}).single("filedata"));
+
+hbs.registerPartials(__dirname + "/views/partial");
+
+app.get("/", function(request, response){
+    let links = folder.getFiles("./files/");
+    response.render("index", {
+        title: "Главная страница",
+        description: "Вывод хранимых файлов",
+        links:links,
+    });
+})
+
+app.get("/upload", function(request, response){
+    response.render("upload", {
+        title: "Загрузка файлов",
+        buttonName: "Загрузить файл"
+    });
+})
+app.post("/upload",upload.single("filedata"), function(request, response, next){
+    let filedata = request.file;
+    if (!filedata) res.send("Ошибка при загрузке файла")
+    else 
+    response.render("upload", {
+        title: "Загрузка файлов",
+        buttonName: "Загрузить файл"
+    });
+})
+app.listen(3000, function(){
+    console.log("Запущен сервер по порту 3000");
+})
+
+app.get("/", function(request, response){
+    response.send("Файловое хранилище. Добро пожаловать");
+})
